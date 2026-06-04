@@ -1,0 +1,24 @@
+.ai-native-space/skills/taro-weapp/SKILL.md
+  s_cadff3841429f1::t_3df241cda08e71 29-30,33-38
+  s_cadff3841429f1::t_fecc740cac8901 60
+  s_cadff3841429f1::t_3263e4460ee7b4 1-28,31-32,39-59
+.ai-native-space/skills/taro-weapp/references/evolution.md
+  s_cadff3841429f1::t_1586824d17f15a 24-28
+  s_cadff3841429f1::t_6cfdc1bd17652a 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "82ca4bc765f4a039d724921391ed15d6acc69f49",
+  "prompts": {},
+  "sessions": {
+    "s_cadff3841429f1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcde0fda-38c7-4b33-8baf-1d2c88141031",
+        "model": "mco-5"
+      },
+      "human_author": "swlws <swlwsgg@gmai.com>"
+    }
+  }
+}
