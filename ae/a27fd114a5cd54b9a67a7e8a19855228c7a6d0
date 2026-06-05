@@ -1,0 +1,23 @@
+src/app.config.ts
+  s_cadff3841429f1::t_5095dd4a2f9008 23-24,29-30
+src/pages/login/index.tsx
+  s_cadff3841429f1::t_fe49118c3048a5 9-10,13
+src/pages/mine/index.tsx
+  s_cadff3841429f1::t_8add7dc1c4e5c2 9-10,13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "aea27fd114a5cd54b9a67a7e8a19855228c7a6d0",
+  "prompts": {},
+  "sessions": {
+    "s_cadff3841429f1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcde0fda-38c7-4b33-8baf-1d2c88141031",
+        "model": "mco-5"
+      },
+      "human_author": "swlws <swlwsgg@gmai.com>"
+    }
+  }
+}
