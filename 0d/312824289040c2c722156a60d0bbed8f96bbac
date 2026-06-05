@@ -1,0 +1,55 @@
+src/pages/login/index.scss
+  s_cadff3841429f1::t_936697e0339d49 1-93
+src/pages/index/index.scss
+  s_cadff3841429f1::t_44f5fc24281b4d 1-4
+src/services/request.ts
+  s_cadff3841429f1::t_bb1b78022801a9 1-46
+src/styles/_vars.scss
+  s_cadff3841429f1::t_8b7f2f109069cf 1-13
+src/pages/login/index.config.ts
+  s_cadff3841429f1::t_0ea2a5b466210c 1-3
+src/pages/home/index.tsx
+  s_cadff3841429f1::t_4df96da66c3799 1-27
+src/services/user.ts
+  s_cadff3841429f1::t_b0d410a77f22db 1-20
+src/types/user.ts
+  s_cadff3841429f1::t_99745742978160 1-10
+src/pages/login/index.tsx
+  s_cadff3841429f1::t_c1631a0038a513 1-107
+src/pages/index/index.tsx
+  s_cadff3841429f1::t_0d58f4adffc37b 1-2,4-6,8-13,16
+src/pages/index/index.config.ts
+  s_cadff3841429f1::t_e52fd868802bc5 2
+src/pages/mine/index.tsx
+  s_cadff3841429f1::t_6dcc0b618b8bff 1-56
+src/app.config.ts
+  s_cadff3841429f1::t_60370f56d9df00 3-6,11,13-34
+src/assets/tabbar/README.md
+  s_cadff3841429f1::t_d48bdd09ebc584 1-11
+src/pages/mine/index.config.ts
+  s_cadff3841429f1::t_5183d7dd3ef324 1-3
+src/pages/home/index.config.ts
+  s_cadff3841429f1::t_5f21ead485058d 1-4
+src/pages/home/index.scss
+  s_cadff3841429f1::t_892c0ce6c1a93b 1-21
+src/constants/storage-keys.ts
+  s_cadff3841429f1::t_068a025d292e28 1-4
+src/pages/mine/index.scss
+  s_cadff3841429f1::t_22d75ddc8cef48 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "0d312824289040c2c722156a60d0bbed8f96bbac",
+  "prompts": {},
+  "sessions": {
+    "s_cadff3841429f1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dcde0fda-38c7-4b33-8baf-1d2c88141031",
+        "model": "mco-5"
+      },
+      "human_author": "swlws <swlwsgg@gmai.com>"
+    }
+  }
+}
