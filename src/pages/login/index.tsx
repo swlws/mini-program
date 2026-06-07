@@ -1,54 +1,51 @@
 import { useState } from 'react'
-import { Button, Image, Input, View } from '@tarojs/components'
-import type { ButtonProps, InputProps } from '@tarojs/components'
+import { Button, Text, View } from '@tarojs/components'
+import type { ButtonProps } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
 import { STORAGE_KEYS } from '@/constants/storage-keys'
 import { loginByCode } from '@/services/user'
 
-import defaultAvatar from '@/assets/logo.png'
-
 import './index.scss'
 
-const DEFAULT_AVATAR = defaultAvatar
+const DEFAULT_AVATAR = 'https://picsum.photos/id/201/200/200'
+const DEFAULT_NICK_NAME = '微信用户'
 
 export default function Login() {
-  const [avatarUrl, setAvatarUrl] = useState<string>(DEFAULT_AVATAR)
-  const [nickName, setNickName] = useState<string>('')
+  const [agreed, setAgreed] = useState(false)
+  const [showAgreementModal, setShowAgreementModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const onChooseAvatar: ButtonProps['onChooseAvatar'] = (e) => {
-    setAvatarUrl(e.detail.avatarUrl)
+  const openAgreementPage = (type: 'privacy' | 'user') => {
+    Taro.navigateTo({
+      url: `/pages/agreement/index?type=${type}`
+    })
   }
 
-  const onNickInput: InputProps['onInput'] = (e) => {
-    setNickName(e.detail.value)
-    return e.detail.value
+  const onMainLoginClick = () => {
+    if (submitting) return
+    if (!agreed) {
+      setShowAgreementModal(true)
+    }
   }
 
   const onGetPhoneNumber: ButtonProps['onGetPhoneNumber'] = async (e) => {
     const phoneCode = e.detail.code
     if (!phoneCode) {
+      console.info('[Auth] User canceled getPhoneNumber authorization.')
       Taro.showToast({ title: '已取消授权', icon: 'none' })
-      return
-    }
-    if (!nickName.trim()) {
-      Taro.showToast({ title: '请填写昵称', icon: 'none' })
-      return
-    }
-    if (avatarUrl === DEFAULT_AVATAR) {
-      Taro.showToast({ title: '请选择头像', icon: 'none' })
       return
     }
 
     setSubmitting(true)
     try {
+      console.info('[Auth] Start login by code.')
       const { code } = await Taro.login()
       const resp = await loginByCode({
         code,
         phoneCode,
-        avatarUrl,
-        nickName: nickName.trim()
+        avatarUrl: DEFAULT_AVATAR,
+        nickName: DEFAULT_NICK_NAME
       })
 
       Taro.setStorageSync(STORAGE_KEYS.TOKEN, resp.token)
@@ -56,6 +53,7 @@ export default function Login() {
 
       Taro.reLaunch({ url: '/pages/home/index' })
     } catch (err) {
+      console.error('[Auth] Login failed.', err)
       Taro.showToast({
         title: err instanceof Error ? err.message : '登录失败',
         icon: 'none'
@@ -67,42 +65,97 @@ export default function Login() {
 
   return (
     <View className='login'>
-      <View className='login__title'>欢迎使用</View>
-      <View className='login__subtitle'>登录后开启完整体验</View>
+      <View className='login__content'>
+        <View className='login__logo'>ZH</View>
+        <View className='login__title'>智庭科技，欢迎您！</View>
+        <View className='login__subtitle'>便捷登录，自助报修</View>
 
-      <View className='login__avatar-wrap'>
-        <Button
-          className='login__avatar-btn'
-          openType='chooseAvatar'
-          onChooseAvatar={onChooseAvatar}
+        {agreed ? (
+          <Button
+            className='login__primaryButton'
+            openType='getPhoneNumber'
+            loading={submitting}
+            disabled={submitting}
+            onGetPhoneNumber={onGetPhoneNumber}
+          >
+            手机号快速登录
+          </Button>
+        ) : (
+          <Button
+            className='login__primaryButton'
+            loading={submitting}
+            disabled={submitting}
+            onClick={onMainLoginClick}
+          >
+            手机号快速登录
+          </Button>
+        )}
+      </View>
+
+      <View className='login__agreement'>
+        <View
+          className={`login__checkbox ${agreed ? 'login__checkbox--checked' : ''}`}
+          onClick={() => setAgreed((prev) => !prev)}
         >
-          <Image className='login__avatar' src={avatarUrl} mode='aspectFill' />
-        </Button>
-        <View className='login__avatar-tip'>点击选择头像</View>
+          {agreed && <View className='login__checkboxInner' />}
+        </View>
+        <Text className='login__agreementText'>我已阅读并同意</Text>
+        <Text
+          className='login__agreementLink'
+          onClick={() => openAgreementPage('privacy')}
+        >
+          《隐私政策》
+        </Text>
+        <Text className='login__agreementText'>和</Text>
+        <Text
+          className='login__agreementLink'
+          onClick={() => openAgreementPage('user')}
+        >
+          《用户协议》
+        </Text>
       </View>
 
-      <View className='login__field'>
-        <View className='login__label'>昵称</View>
-        <Input
-          className='login__input'
-          type='nickname'
-          placeholder='请输入昵称'
-          value={nickName}
-          onInput={onNickInput}
-        />
-      </View>
-
-      <Button
-        className='login__submit'
-        openType='getPhoneNumber'
-        loading={submitting}
-        disabled={submitting}
-        onGetPhoneNumber={onGetPhoneNumber}
-      >
-        微信一键登录
-      </Button>
-
-      <View className='login__hint'>登录即同意《用户协议》《隐私政策》</View>
+      {showAgreementModal && (
+        <View className='login__overlay login__overlay--locked'>
+          <View className='login__modal'>
+            <View className='login__modalTitle'>温馨提示</View>
+            <View className='login__modalDesc'>
+              请阅读并同意
+              <Text
+                className='login__agreementLink'
+                onClick={() => openAgreementPage('privacy')}
+              >
+                《隐私政策》
+              </Text>
+              和
+              <Text
+                className='login__agreementLink'
+                onClick={() => openAgreementPage('user')}
+              >
+                《用户协议》
+              </Text>
+              后进行登录
+            </View>
+            <View className='login__modalActions'>
+              <Button
+                className='login__modalButton login__modalButton--cancel'
+                onClick={() => setShowAgreementModal(false)}
+              >
+                取消
+              </Button>
+              <Button
+                className='login__modalButton login__modalButton--confirm'
+                onClick={() => {
+                  setAgreed(true)
+                  setShowAgreementModal(false)
+                }}
+              >
+                已阅读并同意
+              </Button>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   )
 }

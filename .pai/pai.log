@@ -1,0 +1,16 @@
+[11:20:19.056] Try reusing port from lock file: 49697
+[11:20:19.086] Server listening on port 49697, PID 24698
+[11:20:19.106] readProjectFiles, Found 73 files to read.
+node:internal/fs/promises:554
+    const bytesRead = (await PromisePrototypeThen(
+                       ^
+
+Error: EISDIR: illegal operation on a directory, read
+    at async readFileHandle (node:internal/fs/promises:554:24)
+    at async bO (/Users/sunwenlong/.trae/builtin_skills/TRAE-generate-mini-app/scripts/preview-server.js:189:1705) {
+  errno: -21,
+  code: 'EISDIR',
+  syscall: 'read'
+}
+
+Node.js v22.12.0
