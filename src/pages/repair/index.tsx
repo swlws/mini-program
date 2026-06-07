@@ -1,134 +1,284 @@
-import { useState } from 'react'
-import { View, Text, Input, Textarea } from '@tarojs/components'
-import Taro from '@tarojs/taro'
+import { useEffect, useState } from 'react'
+import { Image, Input, Picker, Text, Textarea, View } from '@tarojs/components'
+import Taro, { useDidShow } from '@tarojs/taro'
 
+import { STORAGE_KEYS } from '@/constants/storage-keys'
 import { getFaultTypes, getRepairDevices, getTicketList, submitRepair } from '@/services/repair'
 import type { FaultType, RepairDevice, Ticket } from '@/types/repair'
+import type { UserInfo } from '@/types/user'
 
 import './index.scss'
 
-export default function RepairPage() {
-  const [activeTab, setActiveTab] = useState<string>('form')
+const INITIAL_FORM_DATA = {
+  deviceId: null as number | null,
+  repairPerson: '',
+  phone: '',
+  expectTime: '',
+  address: '',
+  selectedFaultTypes: [] as number[],
+  description: '',
+  images: [] as string[]
+}
 
+const STATUS_COLOR_MAP: Record<Ticket['status'], string> = {
+  repairing: '#ff934d',
+  in_progress: '#e9534d',
+  completed: '#2b6cff'
+}
+
+function formatNow() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const day = now.getDate()
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  return `${year}年${month}月${day}日 ${hours}:${minutes}:${seconds}`
+}
+
+export default function RepairPage() {
+  const [activeTab, setActiveTab] = useState<'form' | 'records'>('form')
   const [faultTypes, setFaultTypes] = useState<FaultType[]>([])
   const [devices, setDevices] = useState<RepairDevice[]>([])
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [hasLoadedTickets, setHasLoadedTickets] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA)
 
-  const [formData, setFormData] = useState({
-    deviceId: null as number | null,
-    repairPerson: '',
-    phone: '',
-    expectTime: '',
-    address: '',
-    selectedFaultTypes: [] as number[],
-    description: '',
-    images: [] as string[],
-  })
+  const hydrateUserDefaults = () => {
+    const userInfo = Taro.getStorageSync<UserInfo>(STORAGE_KEYS.USER_INFO)
+    if (!userInfo) return
 
-  // 加载报修表单数据
-  const loadFormData = () => {
-    getFaultTypes().then(setFaultTypes).catch(() => {})
-    getRepairDevices().then(setDevices).catch(() => {})
+    setFormData((prev) => ({
+      ...prev,
+      repairPerson: prev.repairPerson || userInfo.nickName || '',
+      phone: prev.phone || userInfo.phone || ''
+    }))
   }
 
-  // 加载报修记录数据
-  const loadTickets = () => {
-    getTicketList().then(setTickets).catch(() => {})
-  }
-
-  // Tab切换时加载数据
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
-    if (tab === 'form' && faultTypes.length === 0) {
-      loadFormData()
+  const loadFormData = async () => {
+    try {
+      const [faultTypeList, deviceList] = await Promise.all([
+        getFaultTypes(),
+        getRepairDevices()
+      ])
+      setFaultTypes(faultTypeList)
+      setDevices(deviceList)
+    } catch {
+      Taro.showToast({ title: '表单数据加载失败', icon: 'none' })
     }
-    if (tab === 'records' && tickets.length === 0) {
+  }
+
+  const loadTickets = async () => {
+    try {
+      const ticketList = await getTicketList()
+      setTickets(ticketList)
+      setHasLoadedTickets(true)
+    } catch {
+      Taro.showToast({ title: '报修记录加载失败', icon: 'none' })
+    }
+  }
+
+  useDidShow(() => {
+    hydrateUserDefaults()
+    loadFormData()
+
+    if (activeTab === 'records') {
       loadTickets()
     }
-  }
-
-  // 初始加载
-  useState(() => {
-    loadFormData()
   })
 
-  const selectedDevice = formData.deviceId
-    ? (devices.find((d) => d.id === formData.deviceId) ?? null)
-    : null
+  useEffect(() => {
+    if (activeTab === 'records' && !hasLoadedTickets) {
+      loadTickets()
+    }
+  }, [activeTab, hasLoadedTickets])
+
+  const selectedDevice = devices.find((item) => item.id === formData.deviceId) ?? null
+  const selectedFaultTypeLabels = faultTypes
+    .filter((item) => formData.selectedFaultTypes.includes(item.id))
+    .map((item) => item.label)
+
+  const updateFormField = <K extends keyof typeof INITIAL_FORM_DATA>(
+    key: K,
+    value: (typeof INITIAL_FORM_DATA)[K]
+  ) => {
+    setFormData((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleTabChange = (tab: 'form' | 'records') => {
+    if (tab === activeTab) return
+    setActiveTab(tab)
+  }
 
   const handleSelectDevice = () => {
+    if (!devices.length) {
+      Taro.showToast({ title: '暂无可选设备', icon: 'none' })
+      return
+    }
+
     Taro.showActionSheet({
-      itemList: devices.map((d) => d.name),
-      success: (res) => {
-        setFormData({
-          ...formData,
-          deviceId: devices[res.tapIndex].id,
-        })
-      },
+      itemList: devices.map((item) => item.name),
+      success: ({ tapIndex }) => {
+        const device = devices[tapIndex]
+        if (!device) return
+        updateFormField('deviceId', device.id)
+      }
+    })
+  }
+
+  const handleChooseImage = async () => {
+    const remainCount = 6 - formData.images.length
+    if (remainCount <= 0) {
+      Taro.showToast({ title: '最多上传6张', icon: 'none' })
+      return
+    }
+
+    try {
+      const res = await Taro.chooseImage({
+        count: remainCount,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera']
+      })
+
+      updateFormField('images', [...formData.images, ...res.tempFilePaths])
+    } catch {
+      // User canceled image selection.
+    }
+  }
+
+  const handleDeleteImage = (index: number) => {
+    updateFormField(
+      'images',
+      formData.images.filter((_, currentIndex) => currentIndex !== index)
+    )
+  }
+
+  const handlePreviewImage = (current: string) => {
+    Taro.previewImage({
+      current,
+      urls: formData.images
     })
   }
 
   const toggleFaultType = (id: number) => {
-    const currentIds = formData.selectedFaultTypes
-    const newIds = currentIds.includes(id)
-      ? currentIds.filter((i) => i !== id)
-      : [...currentIds, id]
-    setFormData({ ...formData, selectedFaultTypes: newIds })
+    const nextIds = formData.selectedFaultTypes.includes(id)
+      ? formData.selectedFaultTypes.filter((item) => item !== id)
+      : [...formData.selectedFaultTypes, id]
+
+    updateFormField('selectedFaultTypes', nextIds)
   }
 
-  const handleSubmit = () => {
-    submitRepair({
-      deviceId: formData.deviceId!,
-      repairPerson: formData.repairPerson,
-      phone: formData.phone,
-      expectTime: formData.expectTime,
-      address: formData.address,
-      faultTypeIds: formData.selectedFaultTypes,
-      description: formData.description,
-      images: formData.images,
-    }).then(() => {
+  const validateForm = () => {
+    if (!formData.deviceId) return '请选择设备'
+    if (!formData.repairPerson.trim()) return '请输入报修人'
+    if (!formData.phone.trim()) return '请输入联系电话'
+    if (!/^1\d{10}$/.test(formData.phone.trim())) return '请输入正确的手机号'
+    if (!formData.expectTime) return '请选择期望维修时间'
+    if (!formData.address.trim()) return '请输入报修地址'
+    if (!formData.selectedFaultTypes.length) return '请选择故障类型'
+    if (!formData.description.trim()) return '请输入故障描述'
+    return ''
+  }
+
+  const resetForm = () => {
+    const userInfo = Taro.getStorageSync<UserInfo>(STORAGE_KEYS.USER_INFO)
+
+    setFormData({
+      ...INITIAL_FORM_DATA,
+      repairPerson: userInfo?.nickName || '',
+      phone: userInfo?.phone || ''
+    })
+  }
+
+  const handleSubmit = async () => {
+    const errorMessage = validateForm()
+    if (errorMessage) {
+      Taro.showToast({ title: errorMessage, icon: 'none' })
+      return
+    }
+
+    if (!selectedDevice) {
+      Taro.showToast({ title: '设备信息异常，请重新选择', icon: 'none' })
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      const result = await submitRepair({
+        deviceId: formData.deviceId as number,
+        repairPerson: formData.repairPerson.trim(),
+        phone: formData.phone.trim(),
+        expectTime: formData.expectTime,
+        address: formData.address.trim(),
+        faultTypeIds: formData.selectedFaultTypes,
+        description: formData.description.trim(),
+        images: formData.images
+      })
+
+      const nextTicket: Ticket = {
+        id: result.ticketId,
+        number: `NO${String(result.ticketId).slice(-6).padStart(6, '0')}`,
+        status: 'repairing',
+        statusText: '报修中',
+        deviceName: selectedDevice.name,
+        deviceCode: selectedDevice.code,
+        deviceModel: selectedDevice.model,
+        repairTime: formatNow(),
+        faultType: selectedFaultTypeLabels.join('、'),
+        description: formData.description.trim(),
+        canEvaluate: false
+      }
+
+      setTickets((prev) => [nextTicket, ...prev])
+      setHasLoadedTickets(true)
+      resetForm()
+      setActiveTab('records')
+
       Taro.showToast({
         title: '提交成功',
-        icon: 'success',
+        icon: 'success'
       })
-    }).catch(() => {
+    } catch {
       Taro.showToast({
         title: '提交失败',
-        icon: 'none',
+        icon: 'none'
       })
-    })
-  }
-
-  const goToDetail = (ticketId: number) => {
-    Taro.navigateTo({
-      url: '/pages/ticket-detail/index?id=' + ticketId,
-    })
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'repairing':
-        return '#fa8c16'
-      case 'in_progress':
-        return '#1677ff'
-      case 'completed':
-        return '#52c41a'
-      default:
-        return '#999'
+    } finally {
+      setSubmitting(false)
     }
   }
+
+  const goToDetail = (ticketId: number, mode: 'view' | 'evaluate' = 'view') => {
+    Taro.navigateTo({
+      url: `/pages/ticket-detail/index?id=${ticketId}&mode=${mode}`
+    })
+  }
+
+  const renderInfoRow = (label: string, value?: string, placeholder = '--') => (
+    <View className='repair-page__info-row'>
+      <Text className='repair-page__info-label'>{label}</Text>
+      <Text className={`repair-page__info-value ${value ? '' : 'is-placeholder'}`}>
+        {value || placeholder}
+      </Text>
+    </View>
+  )
 
   return (
     <View className='repair-page'>
       <View className='repair-page__tabs'>
         <View
-          className={`repair-page__tab ${activeTab === 'form' ? 'active' : ''}`}
+          className={`repair-page__tab ${activeTab === 'form' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('form')}
         >
           <Text className='repair-page__tab-text'>在线报修</Text>
         </View>
+        <View className='repair-page__tab-divider' />
         <View
-          className={`repair-page__tab ${activeTab === 'records' ? 'active' : ''}`}
+          className={`repair-page__tab ${activeTab === 'records' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('records')}
         >
           <Text className='repair-page__tab-text'>报修记录</Text>
@@ -136,174 +286,162 @@ export default function RepairPage() {
       </View>
 
       {activeTab === 'form' && (
-        <View className='repair-page__content'>
-          <View className='form-section'>
-            <View className='form-section__title'>设备信息</View>
+        <View className='repair-page__content repair-page__content--form'>
+          <View className='repair-page__card'>
+            <View className='repair-page__section-title'>设备信息</View>
 
-            <View
-              className='form-item form-item--row'
-              onClick={handleSelectDevice}
-            >
-              <View className='form-item__label'>
-                <Text className='required'>*</Text>
-                <Text>设备名称</Text>
+            <View className='repair-page__field repair-page__field--picker' onClick={handleSelectDevice}>
+              <View className='repair-page__field-label'>
+                <Text className='repair-page__required'>*</Text>
+                <Text>设备名称：</Text>
               </View>
-              <View className='form-item__control'>
-                <View className='form-item__value'>
-                  <Text className={selectedDevice ? '' : 'placeholder'}>
-                    {selectedDevice ? selectedDevice.name : '请选择设备...'}
-                  </Text>
-                  <Text className='arrow'>▼</Text>
-                </View>
+              <View className='repair-page__field-value'>
+                <Text className={selectedDevice ? '' : 'is-placeholder'}>
+                  {selectedDevice?.name || '请选择设备...'}
+                </Text>
+                <Text className='repair-page__field-arrow'>⌄</Text>
               </View>
             </View>
 
-            {selectedDevice && (
-              <View className='device-info'>
-                <View className='device-info__item'>
-                  <Text className='label'>设备编号：</Text>
-                  <Text className='value'>{selectedDevice.code}</Text>
-                </View>
-                <View className='device-info__item'>
-                  <Text className='label'>设备型号：</Text>
-                  <Text className='value'>{selectedDevice.model}</Text>
-                </View>
-                <View className='device-info__item'>
-                  <Text className='label'>出厂日期：</Text>
-                  <Text className='value'>{selectedDevice.productionDate}</Text>
-                </View>
-                <View className='device-info__item'>
-                  <Text className='label'>质保截止日期：</Text>
-                  <Text className='value'>
-                    {selectedDevice.warrantyEndDate}
-                  </Text>
-                </View>
-              </View>
-            )}
+            {renderInfoRow('设备编号：', selectedDevice?.code)}
+            {renderInfoRow('设备型号：', selectedDevice?.model)}
+            {renderInfoRow('出厂日期：', selectedDevice?.productionDate)}
+            {renderInfoRow('质保截止日期：', selectedDevice?.warrantyEndDate)}
           </View>
 
-          <View className='form-section'>
-            <View className='form-section__title'>报修信息</View>
+          <View className='repair-page__card'>
+            <View className='repair-page__section-title'>报修信息</View>
 
-            <View className='form-item form-item--row'>
-              <View className='form-item__label'>
-                <Text className='required'>*</Text>
-                <Text>报修人</Text>
+            <View className='repair-page__field'>
+              <View className='repair-page__field-label'>
+                <Text className='repair-page__required'>*</Text>
+                <Text>报修人：</Text>
               </View>
-              <View className='form-item__control'>
-                <Input
-                  className='form-item__input'
-                  placeholder='请输入...'
-                  value={formData.repairPerson}
-                  onInput={(e) =>
-                    setFormData({ ...formData, repairPerson: e.detail.value })
-                  }
-                />
-              </View>
+              <Input
+                className='repair-page__field-input'
+                placeholder='请输入...'
+                placeholderClass='repair-page__placeholder'
+                value={formData.repairPerson}
+                onInput={(e) => updateFormField('repairPerson', e.detail.value)}
+              />
             </View>
 
-            <View className='form-item form-item--row'>
-              <View className='form-item__label'>
-                <Text className='required'>*</Text>
-                <Text>联系电话</Text>
+            <View className='repair-page__field'>
+              <View className='repair-page__field-label'>
+                <Text className='repair-page__required'>*</Text>
+                <Text>联系电话：</Text>
               </View>
-              <View className='form-item__control'>
-                <Input
-                  className='form-item__input'
-                  type='number'
-                  placeholder='请输入...'
-                  value={formData.phone}
-                  onInput={(e) =>
-                    setFormData({ ...formData, phone: e.detail.value })
-                  }
-                />
-              </View>
+              <Input
+                className='repair-page__field-input'
+                type='number'
+                placeholder='请输入...'
+                placeholderClass='repair-page__placeholder'
+                value={formData.phone}
+                maxlength={11}
+                onInput={(e) => updateFormField('phone', e.detail.value)}
+              />
             </View>
 
-            <View className='form-item form-item--row'>
-              <View className='form-item__label'>
-                <Text className='required'>*</Text>
-                <Text>期望维修时间</Text>
-              </View>
-              <View className='form-item__control'>
-                <View className='form-item__value'>
-                  <Text className={formData.expectTime ? '' : 'placeholder'}>
+            <Picker
+              mode='date'
+              value={formData.expectTime}
+              onChange={(e) => updateFormField('expectTime', e.detail.value)}
+            >
+              <View className='repair-page__field repair-page__field--picker'>
+                <View className='repair-page__field-label'>
+                  <Text className='repair-page__required'>*</Text>
+                  <Text>期望维修时间：</Text>
+                </View>
+                <View className='repair-page__field-value'>
+                  <Text className={formData.expectTime ? '' : 'is-placeholder'}>
                     {formData.expectTime || '请选择...'}
                   </Text>
-                  <Text className='arrow'>📅</Text>
+                  <Text className='repair-page__field-arrow'>⌄</Text>
                 </View>
               </View>
-            </View>
+            </Picker>
 
-            <View className='form-item form-item--col'>
-              <View className='form-item__label'>
-                <Text className='required'>*</Text>
-                <Text>地址</Text>
+            <View className='repair-page__field repair-page__field--textarea'>
+              <View className='repair-page__field-label'>
+                <Text className='repair-page__required'>*</Text>
+                <Text>地址：</Text>
               </View>
               <Textarea
-                className='form-item__textarea'
-                placeholder='请输入报修具体地址...'
+                className='repair-page__textarea'
+                maxlength={120}
+                autoHeight
+                placeholder='请输入报修具体地址，地址超长换行展示...'
+                placeholderClass='repair-page__placeholder'
                 value={formData.address}
-                onInput={(e) =>
-                  setFormData({ ...formData, address: e.detail.value })
-                }
+                onInput={(e) => updateFormField('address', e.detail.value)}
               />
             </View>
           </View>
 
-          <View className='form-section'>
-            <View className='form-section__title'>故障类型</View>
-            <View className='fault-types'>
-              {faultTypes.map((type) => (
+          <View className='repair-page__card'>
+            <View className='repair-page__section-title'>故障类型</View>
+            <View className='repair-page__fault-list'>
+              {faultTypes.map((item) => (
                 <View
-                  key={type.id}
-                  className={`fault-type-tag ${formData.selectedFaultTypes.includes(type.id) ? 'active' : ''}`}
-                  onClick={() => toggleFaultType(type.id)}
+                  key={item.id}
+                  className={`repair-page__fault-tag ${formData.selectedFaultTypes.includes(item.id) ? 'is-active' : ''}`}
+                  onClick={() => toggleFaultType(item.id)}
                 >
-                  {type.label}
+                  {item.label}
                 </View>
               ))}
             </View>
           </View>
 
-          <View className='form-section'>
-            <View className='form-section__title'>故障描述</View>
-            <View className='form-item form-item--col'>
-              <Textarea
-                className='form-item__textarea'
-                placeholder='请详细描述设备故障情况...'
-                value={formData.description}
-                onInput={(e) =>
-                  setFormData({ ...formData, description: e.detail.value })
-                }
-              />
-            </View>
+          <View className='repair-page__card'>
+            <View className='repair-page__section-title'>故障描述</View>
+            <Textarea
+              className='repair-page__description'
+              maxlength={300}
+              autoHeight
+              placeholder='请详细描述设备故障情况...'
+              placeholderClass='repair-page__placeholder'
+              value={formData.description}
+              onInput={(e) => updateFormField('description', e.detail.value)}
+            />
+          </View>
 
-            <View className='upload-header'>
-              <Text className='upload-title'>上传图片/视频</Text>
-              <Text className='upload-tip'>最多可上传6张图片或视频；</Text>
-            </View>
-            <View className='upload-grid'>
-              {formData.images.map((_, index) => (
-                <View key={index} className='upload-item'>
-                  <View
-                    className='upload-item__image'
-                    style={{ background: '#f0f0f0' }}
+          <View className='repair-page__card'>
+            <View className='repair-page__section-title'>上传图片/视频</View>
+            <Text className='repair-page__upload-tip'>最多可上传6张图片或视频；</Text>
+
+            <View className='repair-page__upload-grid'>
+              {formData.images.map((image, index) => (
+                <View key={image + index} className='repair-page__upload-item'>
+                  <Image
+                    className='repair-page__upload-image'
+                    src={image}
+                    mode='aspectFill'
+                    onClick={() => handlePreviewImage(image)}
                   />
-                  <View className='upload-item__delete'>✕</View>
+                  <View
+                    className='repair-page__upload-delete'
+                    onClick={() => handleDeleteImage(index)}
+                  >
+                    ×
+                  </View>
                 </View>
               ))}
+
               {formData.images.length < 6 && (
-                <View className='upload-item upload-item__add'>
-                  <Text className='upload-icon'>📷</Text>
+                <View className='repair-page__upload-item repair-page__upload-item--add' onClick={handleChooseImage}>
+                  <Text className='repair-page__upload-add-icon'>📷</Text>
                 </View>
               )}
             </View>
           </View>
 
-          <View className='submit-section'>
-            <View className='submit-btn' onClick={handleSubmit}>
-              <Text>确认提交</Text>
+          <View className='repair-page__submit-wrap'>
+            <View
+              className={`repair-page__submit-btn ${submitting ? 'is-disabled' : ''}`}
+              onClick={handleSubmit}
+            >
+              <Text>{submitting ? '提交中...' : '确认提交'}</Text>
             </View>
           </View>
         </View>
@@ -311,51 +449,44 @@ export default function RepairPage() {
 
       {activeTab === 'records' && (
         <View className='repair-page__content'>
-          <View className='ticket-list'>
+          <View className='repair-page__record-list'>
             {tickets.map((ticket) => (
-              <View key={ticket.id} className='ticket-card'>
-                <View className='ticket-card__header'>
-                  <Text className='ticket-card__number'>
-                    报修单编号：{ticket.number}
-                  </Text>
+              <View key={ticket.id} className='repair-page__record-card'>
+                <View className='repair-page__record-header'>
+                  <Text className='repair-page__record-number'>报修单编号：{ticket.number}</Text>
                   <View
-                    className='ticket-card__status'
-                    style={{
-                      backgroundColor: getStatusColor(ticket.status) + '20',
-                      color: getStatusColor(ticket.status),
-                    }}
+                    className='repair-page__record-status'
+                    style={{ color: STATUS_COLOR_MAP[ticket.status] }}
                   >
-                    <Text className='ticket-card__status-text'>
-                      ● {ticket.statusText}
+                    <Text className='repair-page__record-dot'>●</Text>
+                    <Text>{ticket.statusText}</Text>
+                  </View>
+                </View>
+
+                <View className='repair-page__record-body'>
+                  {renderInfoRow('设备编号：', ticket.deviceCode)}
+                  {renderInfoRow('设备名称：', ticket.deviceName)}
+                  {renderInfoRow('设备型号：', ticket.deviceModel)}
+                  {renderInfoRow('报修时间：', ticket.repairTime)}
+                  {renderInfoRow('故障类型：', ticket.faultType)}
+                  <View className='repair-page__info-row repair-page__info-row--multiline'>
+                    <Text className='repair-page__info-label'>故障描述：</Text>
+                    <Text className='repair-page__info-value repair-page__info-value--multiline'>
+                      {ticket.description}
                     </Text>
                   </View>
                 </View>
 
-                <View className='ticket-card__info'>
-                  <View className='ticket-card__info-item'>
-                    <Text className='label'>设备名称：</Text>
-                    <Text className='value ellipsis'>{ticket.deviceName}</Text>
-                  </View>
-                  <View className='ticket-card__info-item'>
-                    <Text className='label'>报修时间：</Text>
-                    <Text className='value'>{ticket.repairTime}</Text>
-                  </View>
-                  <View className='ticket-card__info-item'>
-                    <Text className='label'>故障类型：</Text>
-                    <Text className='value'>{ticket.faultType}</Text>
-                  </View>
-                </View>
-
-                <View className='ticket-card__footer'>
+                <View className='repair-page__record-actions'>
                   {ticket.canEvaluate && (
-                    <View className='ticket-card__btn secondary'>
+                    <View
+                      className='repair-page__action-btn repair-page__action-btn--secondary'
+                      onClick={() => goToDetail(ticket.id, 'evaluate')}
+                    >
                       <Text>写评价</Text>
                     </View>
                   )}
-                  <View
-                    className='ticket-card__btn'
-                    onClick={() => goToDetail(ticket.id)}
-                  >
+                  <View className='repair-page__action-btn' onClick={() => goToDetail(ticket.id)}>
                     <Text>查看</Text>
                   </View>
                 </View>

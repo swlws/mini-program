@@ -1,4 +1,11 @@
-import type { FaultType, RepairDevice, Ticket, TicketDetail, RepairSubmitParams, EvaluationParams } from '@/types/repair'
+import type {
+  EvaluationParams,
+  FaultType,
+  RepairDevice,
+  RepairSubmitParams,
+  Ticket,
+  TicketDetail
+} from '@/types/repair'
 
 const mockFaultTypes: FaultType[] = [
   { id: 1, label: '视觉昏暗、亮度不足' },
@@ -6,7 +13,7 @@ const mockFaultTypes: FaultType[] = [
   { id: 3, label: '调焦故障' },
   { id: 4, label: '载物台故障' },
   { id: 5, label: '灯光闪烁忽明忽暗' },
-  { id: 6, label: '其他' },
+  { id: 6, label: '其他' }
 ]
 
 const mockRepairDevices: RepairDevice[] = [
@@ -16,7 +23,7 @@ const mockRepairDevices: RepairDevice[] = [
     code: 'WH00000001',
     model: 'VMS-3020',
     productionDate: '2025年6月30日',
-    warrantyEndDate: '2028年6月30日',
+    warrantyEndDate: '2028年6月30日'
   },
   {
     id: 2,
@@ -24,74 +31,162 @@ const mockRepairDevices: RepairDevice[] = [
     code: 'WH00000002',
     model: 'CMM-8106',
     productionDate: '2024年3月15日',
-    warrantyEndDate: '2027年3月15日',
-  },
+    warrantyEndDate: '2027年3月15日'
+  }
+]
+
+const mockImages = [
+  'https://picsum.photos/seed/repair-1/240/240',
+  'https://picsum.photos/seed/repair-2/240/240',
+  'https://picsum.photos/seed/repair-3/240/240',
+  'https://picsum.photos/seed/repair-4/240/240',
+  'https://picsum.photos/seed/repair-5/240/240'
 ]
 
 const mockTickets: Ticket[] = [
   {
-    id: 1,
-    number: 'NO000001',
+    id: 3,
+    number: 'NO000003',
     status: 'repairing',
     statusText: '报修中',
     deviceName: 'VMS系列手动影像测量仪',
     deviceCode: 'WH00000001',
     deviceModel: 'VMS-3020',
-    repairTime: '2026-06-07 10:30',
-    faultType: '调焦故障',
-    description: '设备调焦困难，无法清晰对焦，尝试多次调整无效',
-    canEvaluate: false,
+    repairTime: '2025年6月30日 12:23:12',
+    faultType: '视觉昏暗、亮度不足',
+    description: '显微镜在使用过程中反复出现视觉昏暗，亮度不足',
+    canEvaluate: false
   },
   {
     id: 2,
     number: 'NO000002',
     status: 'in_progress',
     statusText: '维修中',
-    deviceName: '全自动三坐标测量仪',
-    deviceCode: 'WH00000002',
-    deviceModel: 'CMM-8106',
-    repairTime: '2026-06-05 14:20',
-    faultType: '灯光闪烁忽明忽暗',
-    description: '设备灯光不稳定，使用过程中频繁闪烁',
-    canEvaluate: false,
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    repairTime: '2025年6月30日 12:23:12',
+    faultType: '视觉昏暗、亮度不足',
+    description: '显微镜在使用过程中反复出现视觉昏暗，亮度不足',
+    canEvaluate: true
   },
   {
-    id: 3,
-    number: 'NO000003',
+    id: 1,
+    number: 'NO000001',
     status: 'completed',
     statusText: '已完成',
     deviceName: 'VMS系列手动影像测量仪',
     deviceCode: 'WH00000001',
     deviceModel: 'VMS-3020',
-    repairTime: '2026-06-01 09:00',
-    faultType: '其他',
-    description: '设备出现异常噪音，需要检修',
-    canEvaluate: true,
+    repairTime: '2025年6月30日 12:23:12',
+    faultType: '视觉昏暗、亮度不足',
+    description: '显微镜在使用过程中反复出现视觉昏暗，亮度不足',
+    canEvaluate: true
   },
+  {
+    id: 4,
+    number: 'NO000004',
+    status: 'completed',
+    statusText: '已完成',
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    repairTime: '2025年6月30日 12:23:12',
+    faultType: '视觉昏暗、亮度不足',
+    description: '显微镜在使用过程中反复出现视觉昏暗，亮度不足',
+    canEvaluate: false
+  }
 ]
 
-const mockTicketDetail: TicketDetail = {
-  id: 1,
-  number: 'NO000003',
-  status: 'completed',
-  statusText: '已完成',
-  deviceName: 'VMS系列手动影像测量仪',
-  deviceCode: 'WH00000001',
-  deviceModel: 'VMS-3020',
-  productionDate: '2025年6月30日',
-  warrantyEndDate: '2028年6月30日',
-  repairPerson: '张三',
-  phone: '13800138000',
-  expectTime: '2026-06-10 14:00',
-  address: '北京市海淀区科技园A座101室',
-  faultType: '其他',
-  description: '设备出现异常噪音，需要检修',
-  images: [],
-  repairInfo: {
-    repairTime: '2026-06-04',
-    repairPerson: '李四',
+const mockTicketDetails: Record<number, TicketDetail> = {
+  1: {
+    id: 1,
+    number: 'NO000001',
+    status: 'completed',
+    statusText: '已完成',
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    productionDate: '2025年6月30日',
+    warrantyEndDate: '2028年6月30日',
+    repairPerson: '张三',
+    phone: '18300231896',
+    expectTime: '2026年6月05日',
+    address: '湖北省武汉市东湖高新技术开发区清风路8号天琪集团3号厂房3楼',
+    faultType: '视觉昏暗、亮度不足',
+    description: '这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字；',
+    images: mockImages,
+    repairInfo: {
+      repairTime: '2026年6月04日 13:23:56',
+      repairPerson: '李四'
+    },
+    canEvaluate: true
   },
-  canEvaluate: true,
+  2: {
+    id: 2,
+    number: 'NO000002',
+    status: 'in_progress',
+    statusText: '维修中',
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    productionDate: '2025年6月30日',
+    warrantyEndDate: '2028年6月30日',
+    repairPerson: '张三',
+    phone: '18300231896',
+    expectTime: '2026年6月05日',
+    address: '湖北省武汉市东湖高新技术开发区清风路8号天琪集团3号厂房3楼',
+    faultType: '视觉昏暗、亮度不足',
+    description: '这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字；',
+    images: mockImages,
+    repairInfo: {
+      repairTime: '2026年6月04日 13:23:56',
+      repairPerson: '李四'
+    },
+    canEvaluate: true
+  },
+  3: {
+    id: 3,
+    number: 'NO000003',
+    status: 'repairing',
+    statusText: '报修中',
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    productionDate: '2025年6月30日',
+    warrantyEndDate: '2028年6月30日',
+    repairPerson: '张三',
+    phone: '18300231896',
+    expectTime: '2026年6月05日',
+    address: '湖北省武汉市东湖高新技术开发区清风路8号天琪集团3号厂房3楼',
+    faultType: '视觉昏暗、亮度不足',
+    description: '这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字；',
+    images: mockImages,
+    canEvaluate: false
+  },
+  4: {
+    id: 4,
+    number: 'NO000004',
+    status: 'completed',
+    statusText: '已完成',
+    deviceName: 'VMS系列手动影像测量仪',
+    deviceCode: 'WH00000001',
+    deviceModel: 'VMS-3020',
+    productionDate: '2025年6月30日',
+    warrantyEndDate: '2028年6月30日',
+    repairPerson: '张三',
+    phone: '18300231896',
+    expectTime: '2026年6月05日',
+    address: '湖北省武汉市东湖高新技术开发区清风路8号天琪集团3号厂房3楼',
+    faultType: '视觉昏暗、亮度不足',
+    description: '这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字这是一段故障描述文字；',
+    images: mockImages,
+    repairInfo: {
+      repairTime: '2026年6月04日 13:23:56',
+      repairPerson: '李四'
+    },
+    canEvaluate: false
+  }
 }
 
 export function mockGetFaultTypes(): Promise<FaultType[]> {
@@ -109,9 +204,9 @@ export function mockGetTicketList(): Promise<Ticket[]> {
   return Promise.resolve(mockTickets)
 }
 
-export function mockGetTicketDetail(_id: number): Promise<TicketDetail> {
+export function mockGetTicketDetail(id: number): Promise<TicketDetail> {
   console.info('[RepairServiceMock] Returning mock ticket detail.')
-  return Promise.resolve(mockTicketDetail)
+  return Promise.resolve(mockTicketDetails[id] || mockTicketDetails[3])
 }
 
 export function mockSubmitRepair(_params: RepairSubmitParams): Promise<{ ticketId: number }> {

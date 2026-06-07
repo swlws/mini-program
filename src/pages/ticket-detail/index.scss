@@ -1,148 +1,222 @@
 .ticket-detail-page {
   min-height: 100vh;
-  background: $color-bg;
-  padding: 24rpx;
-  padding-bottom: 120rpx;
+  background: #f3f4f7;
+  padding: 20rpx 24rpx calc(env(safe-area-inset-bottom) + 28rpx);
+  box-sizing: border-box;
+
+  &__loading {
+    padding-top: 180rpx;
+    text-align: center;
+    font-size: 28rpx;
+    color: #8f96a3;
+  }
+
+  &__card {
+    background: #fff;
+    border-radius: 20rpx;
+    padding: 22rpx 28rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.03);
+  }
 
   &__header {
-    background: #fff;
-    border-radius: $radius-lg;
-    padding: 32rpx;
+    min-height: 64rpx;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 24rpx;
+    justify-content: space-between;
+    padding-bottom: 14rpx;
+    border-bottom: 1rpx solid #eceef3;
   }
-}
 
-.ticket-number {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: $color-text;
-}
+  &__number {
+    font-size: 34rpx;
+    font-weight: 700;
+    line-height: 44rpx;
+    color: #2f3440;
+  }
 
-.ticket-status {
-  padding: 8rpx 20rpx;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-}
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    font-size: 28rpx;
+    line-height: 40rpx;
+  }
 
-.info-section {
-  background: #fff;
-  border-radius: $radius-lg;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
+  &__status-dot {
+    font-size: 18rpx;
+  }
 
-  &__title {
+  &__section {
+    padding-top: 18rpx;
+    border-bottom: 1rpx solid #eceef3;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  &__section--images {
+    padding-bottom: 6rpx;
+  }
+
+  &__section-title {
+    margin-bottom: 12rpx;
+    font-size: 34rpx;
+    font-weight: 700;
+    line-height: 46rpx;
+    color: #2f3440;
+  }
+
+  &__info-row {
+    min-height: 70rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &.is-multiline {
+      align-items: flex-start;
+      padding-bottom: 10rpx;
+    }
+  }
+
+  &__info-label {
+    flex: 0 0 196rpx;
+    font-size: 28rpx;
+    line-height: 40rpx;
+    color: #8f96a3;
+  }
+
+  &__info-value {
+    flex: 1;
+    min-width: 0;
+    font-size: 28rpx;
+    line-height: 40rpx;
+    color: #2f3440;
+    text-align: right;
+
+    &.is-multiline {
+      text-align: left;
+    }
+  }
+
+  &__fault-tags {
+    padding-bottom: 12rpx;
+  }
+
+  &__fault-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54rpx;
+    padding: 0 20rpx;
+    border: 1rpx solid #dce2ee;
+    border-radius: 999rpx;
+    font-size: 24rpx;
+    color: #4b5363;
+    background: #fff;
+  }
+
+  &__description {
+    display: block;
+    padding-bottom: 18rpx;
+    font-size: 28rpx;
+    line-height: 42rpx;
+    color: #2f3440;
+  }
+
+  &__image-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16rpx;
+    padding-bottom: 20rpx;
+  }
+
+  &__image-item {
+    width: 100%;
+    height: 132rpx;
+    border-radius: 8rpx;
+    background: #eef1f6;
+  }
+
+  &__rating-row {
+    min-height: 62rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__rating-label {
+    font-size: 28rpx;
+    line-height: 40rpx;
+    color: #8f96a3;
+  }
+
+  &__stars {
+    display: flex;
+    align-items: center;
+    gap: 10rpx;
+  }
+
+  &__star {
+    font-size: 38rpx;
+    line-height: 1;
+    color: #d5dae4;
+
+    &.is-active {
+      color: #ffcd4d;
+    }
+
+    &.is-disabled {
+      opacity: 0.9;
+    }
+  }
+
+  &__comment-box {
+    position: relative;
+    margin-top: 18rpx;
+    padding: 18rpx 18rpx 46rpx;
+    border: 1rpx solid #e5e8f0;
+    border-radius: 12rpx;
+    background: #fff;
+  }
+
+  &__comment-input {
+    width: 100%;
+    min-height: 168rpx;
+    font-size: 28rpx;
+    line-height: 40rpx;
+    color: #2f3440;
+  }
+
+  &__placeholder {
+    color: #b6bdca;
+  }
+
+  &__comment-count {
+    position: absolute;
+    right: 18rpx;
+    bottom: 14rpx;
+    font-size: 24rpx;
+    line-height: 32rpx;
+    color: #a2a9b6;
+  }
+
+  &__submit-btn {
+    margin-top: 22rpx;
+    height: 78rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999rpx;
+    background: #2166f3;
+    box-shadow: 0 12rpx 28rpx rgba(33, 102, 243, 0.24);
     font-size: 30rpx;
     font-weight: 600;
-    color: $color-text;
-    margin-bottom: 24rpx;
+    color: #fff;
+
+    &.is-disabled {
+      opacity: 0.6;
+    }
   }
-}
-
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.info-item {
-  display: flex;
-
-  .label {
-    font-size: 26rpx;
-    color: $color-text-secondary;
-    flex-shrink: 0;
-  }
-
-  .value {
-    font-size: 26rpx;
-    color: $color-text;
-    flex: 1;
-  }
-}
-
-.image-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-top: 24rpx;
-}
-
-.image-item {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 12rpx;
-}
-
-.evaluation-section {
-  background: #fff;
-  border-radius: $radius-lg;
-  padding: 32rpx;
-}
-
-.rating-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
-
-  &:last-child {
-    margin-bottom: 32rpx;
-  }
-}
-
-.rating-label {
-  font-size: 28rpx;
-  color: $color-text;
-}
-
-.rating-stars {
-  display: flex;
-  gap: 8rpx;
-}
-
-.star {
-  font-size: 40rpx;
-  color: #d9d9d9;
-  transition: color 0.3s;
-
-  &.active {
-    color: #ffc107;
-  }
-}
-
-.comment-section {
-  position: relative;
-  margin-bottom: 32rpx;
-}
-
-.comment-input {
-  width: 100%;
-  min-height: 200rpx;
-  padding: 24rpx;
-  background: #f7f8fa;
-  border-radius: 12rpx;
-  font-size: 28rpx;
-  box-sizing: border-box;
-}
-
-.char-count {
-  position: absolute;
-  right: 16rpx;
-  bottom: 16rpx;
-  font-size: 24rpx;
-  color: $color-text-secondary;
-}
-
-.submit-evaluation {
-  width: 100%;
-  padding: 32rpx;
-  background: $color-primary;
-  color: #fff;
-  text-align: center;
-  border-radius: 12rpx;
-  font-size: 32rpx;
-  font-weight: 600;
 }
