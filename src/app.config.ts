@@ -9,7 +9,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: "light",
     navigationBarBackgroundColor: "#fff",
-    navigationBarTitleText: "",
+    navigationBarTitleText: "首页",
     navigationBarTextStyle: "black",
   },
   tabBar: {
@@ -20,7 +20,19 @@ export default defineAppConfig({
     list: [
       {
         pagePath: "pages/home/index",
-        text: "主页",
+        text: "首页",
+        iconPath: "assets/logo.png",
+        selectedIconPath: "assets/logo.png",
+      },
+      {
+        pagePath: "pages/index/index",
+        text: "设备",
+        iconPath: "assets/logo.png",
+        selectedIconPath: "assets/logo.png",
+      },
+      {
+        pagePath: "pages/agreement/index",
+        text: "报修",
         iconPath: "assets/logo.png",
         selectedIconPath: "assets/logo.png",
       },
