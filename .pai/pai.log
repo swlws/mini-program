@@ -1,6 +1,6 @@
-[11:20:19.056] Try reusing port from lock file: 49697
-[11:20:19.086] Server listening on port 49697, PID 24698
-[11:20:19.106] readProjectFiles, Found 73 files to read.
+[11:39:19.769] Try reusing port from lock file: 49697
+[11:39:19.798] Server listening on port 49697, PID 29936
+[11:39:19.819] readProjectFiles, Found 74 files to read.
 node:internal/fs/promises:554
     const bytesRead = (await PromisePrototypeThen(
                        ^

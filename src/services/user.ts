@@ -1,20 +1,19 @@
-import { request } from './request'
+import type { LoginParams, LoginResp } from "@/types/user";
+import { USE_MOCK } from "@/utils/constant";
 
-import type { LoginResp } from '@/types/user'
+import { mockUserLogin } from "./user.mock";
+import { request } from "./request";
 
-const BASE_URL = ''
-
-interface LoginParams {
-  code: string
-  phoneCode: string
-  avatarUrl: string
-  nickName: string
-}
+const BASE_URL = "";
 
 export function loginByCode(params: LoginParams) {
+  if (USE_MOCK) {
+    return mockUserLogin(params);
+  }
+
   return request<LoginResp>({
     url: `${BASE_URL}/auth/wx-login`,
-    method: 'POST',
-    data: params
-  })
+    method: "POST",
+    data: params,
+  });
 }
